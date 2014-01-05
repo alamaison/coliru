@@ -26,32 +26,58 @@
 
 'using strict';
 
-test("main() finder", function() {
+function expectFindMain(sourceCode) {
+    ok(coliru.containsMainMethod(sourceCode),
+       'Has a main() method: ' + sourceCode);
+}
 
-    function expectFindMain(sourceCode) {
-        ok(coliru.containsMainMethod(sourceCode),
-           'Has a main() method: ' + sourceCode);
-    }
-    function expectNotFindMain(sourceCode) {
-        ok(!coliru.containsMainMethod(sourceCode),
-           'Does not have a main() method: ' + sourceCode);
-    }
+function expectNotFindMain(sourceCode) {
+    ok(!coliru.containsMainMethod(sourceCode),
+       'Does not have a main() method: ' + sourceCode);
+}
 
+
+module("containsMainMethod");
+
+test("no-arg main", function() {
     expectFindMain('int main() { return 0; }');
-    expectNotFindMain('int maim() { return 0; }');
-    expectFindMain('int main(int argc, char* argv[]) { return 0; }');
-    expectFindMain('int\nmain(int\n\t  argc, \n\tchar *argv[]) { return 0; }');
-    expectFindMain('int main() \n{\n    return 0; }');
-
 });
 
-asyncTest("compile ok run ok", function() {
-    expect(3);
+test("not main", function() {
+    expectNotFindMain('int maim() { return 0; }');
+});
+
+test("arg main", function() {
+    expectFindMain('int main(int argc, char* argv[]) { return 0; }');
+});
+
+test("no-arg main multiline", function() {
+    expectFindMain('int main() \n{\n    return 0; }');
+});
+
+test("arg main multiline", function() {
+    expectFindMain('int\nmain(int\n\t  argc, \n\tchar *argv[]) { return 0; }');
+});
+
+
+module("compile");
+
+asyncTest("no output return success", function() {
+    expect(1);
 
     coliru.compile('int main() { return 0; }',
                    function(response) { equal(response, ''); start(); });
+});
+
+asyncTest("no output return failure", function() {
+    expect(1);
+
     coliru.compile('int main() { return 1; }',
                    function(response) { equal(response, ''); start(); });
+});
+
+asyncTest("run with output", function() {
+    expect(1);
 
     coliru.compile([
         '#include <iostream>',
@@ -61,16 +87,6 @@ asyncTest("compile ok run ok", function() {
         '}'
     ].join('\n'),
     function(response) { equal(response, 'test string'); start(); });
-
-});
-
-asyncTest("compile ok run fail", function() {
-    expect(1);
-
-    coliru.compile('int main() { throw 0; }',
-                   function(response) {
-                       ok(response.match(/terminate/)); start();
-                   });
 
 });
 
@@ -84,12 +100,19 @@ asyncTest("compile error", function() {
 
 });
 
-test("make runnable", function() {
+asyncTest("run crash", function() {
+    expect(1);
 
-    function expectFindMain(sourceCode) {
-        ok(coliru.containsMainMethod(sourceCode),
-           'Has a main() method: ' + sourceCode);
-    }
+    coliru.compile('int main() { throw 0; }',
+                   function(response) {
+                       ok(response.match(/terminate/)); start();
+                   });
+
+});
+
+module("makeSourceRunnable");
+
+test("make runnable", function() {
 
     // Adds one
     expectFindMain(coliru.makeSourceRunnable('int i = 12;'));
@@ -97,4 +120,85 @@ test("make runnable", function() {
     // Leaves existing one unmolested
     expectFindMain(coliru.makeSourceRunnable('int main() { return 0; }'));
 
+});
+
+module("addRunButton", {
+    setup: function() {
+        var fixture = document.getElementById('qunit-fixture');
+        this.codeBlock = document.createElement('code');
+        fixture.appendChild(this.codeBlock);
+    }
+});
+
+// Both C++-tagged and non-C++-tagged blocks recieve a button from addRunButton
+
+test("c++-code", function() {
+    this.codeBlock.textContent = ''; // No dependent on content
+    this.codeBlock.setAttribute('data-lang', 'c++');
+    coliru.addRunButton(this.codeBlock);
+    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
+    equal(this.codeBlock.previousSibling.type, 'button');
+});
+
+
+test("non-c++-tagged-code", function() {
+    // despite appearances, not tagged as c++
+    this.codeBlock.textContent = 'int main() { return 0; }';
+    coliru.addRunButton(this.codeBlock);
+    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
+    equal(this.codeBlock.previousSibling.type, 'button');
+});
+
+module("updateCodeBlock", {
+    setup: function() {
+        var fixture = document.getElementById('qunit-fixture');
+        this.codeBlock = document.createElement('code');
+        fixture.appendChild(this.codeBlock);
+    }
+});
+
+test("c++-code", function() {
+    this.codeBlock.textContent = ''; // No dependent on content
+    this.codeBlock.setAttribute('data-lang', 'c++');
+    coliru.updateCodeBlock(this.codeBlock);
+    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
+    equal(this.codeBlock.previousSibling.type, 'button');
+});
+
+test("non-c++-tagged-code", function() {
+    // despite appearances, not tagged as c++, so no button for you
+    this.codeBlock.textContent = 'int main() { return 0; }';
+    coliru.updateCodeBlock(this.codeBlock);
+    ok(this.codeBlock.previousSibling == null);
+});
+
+module("addRunButtonsToCodeBlocks", {
+    setup: function() {
+        var fixture = document.getElementById('qunit-fixture');
+        this.codeBlock = document.createElement('code');
+        fixture.appendChild(this.codeBlock);
+    }
+});
+
+test("c++-code", function() {
+    this.codeBlock.textContent = ''; // No dependent on content
+    this.codeBlock.setAttribute('data-lang', 'c++');
+
+    // XXX: atomicity relies on #qunit-fixture containing the only code block
+    // in the page - not great
+    coliru.addRunButtonsToCodeBlocks();
+
+    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
+    equal(this.codeBlock.previousSibling.type, 'button');
+});
+
+test("non-c++-tagged-code", function() {
+    // despite appearances, not tagged as c++, so no button for you
+    this.codeBlock.textContent = 'int main() { return 0; }';
+
+    // XXX: atomicity relies on #qunit-fixture containing the only code block
+    // in the page - not great
+    coliru.addRunButtonsToCodeBlocks();
+
+    ok(this.codeBlock.previousSibling == null);
 });
