@@ -1,9 +1,6 @@
 coliru.js
 ======
 
-<script src="//raw.github.com/alamaison/coliru/master/coliru.js"></script>
-<script>window.onload = coliru.addRunButtons</script>
-
 JavaScript library for Coliru online compiler
 
 Add ```<script>window.onload = coliru.addRunButtons</script>``` to
