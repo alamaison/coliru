@@ -45,30 +45,42 @@ test("main() finder", function() {
 
 });
 
-test("compile ok run ok", function() {
+asyncTest("compile ok run ok", function() {
+    expect(3);
 
-    equal(coliru.compile('int main() { return 0; }'), '');
-    equal(coliru.compile('int main() { return 1; }'), '');
+    coliru.compile('int main() { return 0; }',
+                   function(response) { equal(response, ''); start(); });
+    coliru.compile('int main() { return 1; }',
+                   function(response) { equal(response, ''); start(); });
 
-    equal(coliru.compile([
+    coliru.compile([
         '#include <iostream>',
         'int main() {',
         '    std::cout << "test string";',
         '    return 0;',
         '}'
-    ].join('\n')), 'test string');
+    ].join('\n'),
+    function(response) { equal(response, 'test string'); start(); });
 
 });
 
-test("compile ok run fail", function() {
+asyncTest("compile ok run fail", function() {
+    expect(1);
 
-    ok(coliru.compile('int main() { throw 0; }').match(/terminate/));
+    coliru.compile('int main() { throw 0; }',
+                   function(response) {
+                       ok(response.match(/terminate/)); start();
+                   });
 
 });
 
-test("compile error", function() {
+asyncTest("compile error", function() {
+    expect(1);
 
-    ok(coliru.compile('int main() { burp; }').match(/error\:/));
+    coliru.compile('int main() { burp; }',
+                   function(response) {
+                       ok(response.match(/error\:/)); start();
+                   });
 
 });
 

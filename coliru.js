@@ -37,7 +37,11 @@ var coliru = (function() {
         codeBlock.parentNode.insertBefore(outputArea, separator.nextSibling);
 
         var sourceCode = codeBlock.textContent;
-        outputArea.textContent = coliru.compile(coliru.makeSourceRunnable(sourceCode));
+
+        coliru.compile(coliru.makeSourceRunnable(sourceCode),
+                      function(reponse) {
+                          outputArea.textContent = response;
+                      });
     }
 
     function createCompileButton(codeBlock, compileAction) {
@@ -53,7 +57,7 @@ var coliru = (function() {
 
     return {
 
-        compile: function(sourceCode) {
+        compile: function(sourceCode, compileReadyRepsonse) {
 
             var compileCommand = [
                 'g++-4.8 -std=c++11 -O2 -Wall -pedantic -pthread main.cpp ',
@@ -62,10 +66,17 @@ var coliru = (function() {
             var coliruConnection = new XMLHttpRequest();
             coliruConnection.open("POST",
                                   "http://coliru.stacked-crooked.com/compile",
-                                  false);
+                                  true);
+
+            coliruConnection.onreadystatechange = function() {
+                if (coliruConnection.readyState == 4 &&
+                    coliruConnection.status == 200) {
+                    coliruReadyResponse(coliruConnection.response);
+                }
+            }
+
             coliruConnection.send(
                 JSON.stringify({ "cmd": compileCommand, "src": sourceCode }));
-            return coliruConnection.response;
         },
 
         makeSourceRunnable: function(sourceCode) {
