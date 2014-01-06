@@ -147,28 +147,54 @@ test("make runnable", function() {
 
 });
 
-// Returns where the block we append to the code block is expected to appear.
-// Using a function so it's easy to change the behaviour;
-function findAppendedBlock(codeBlock) {
-    return codeBlock.nextSibling;
-}
-
-function checkIsCompileArea(element) {
-
-    equal(element.tagName, 'DIV');
-}
-
 function checkCompileAreaContainsRunButton(compileArea) {
     equal(compileArea.children.length, 1);
     equal(compileArea.firstChild.tagName, 'SPAN');
     ok(compileArea.firstChild.className.match(/runbutton/));
 }
 
+function checkBlockAdded(codeBlock) {
+
+    var pre = codeBlock.parentNode;
+
+    // If this fails, the fixture was set up incorrectly
+    equal(pre.tagName, 'PRE');
+
+    var coliruBlock = pre.nextSibling;
+    equal(coliruBlock.tagName, 'DIV');
+    ok(coliruBlock.className.match(/\bcoliru\b/));
+
+    return coliruBlock;
+}
+
+// Hard to be sure a block wasn't added but we look in the likely places
+function checkBlockNotAdded(codeBlock) {
+
+    var pre = codeBlock.parentNode;
+
+    if (pre.tagName == 'PRE') {
+        ok(pre.nextSibling == null);
+    }
+    else {
+        ok(codeBlock.nextSibling == null);
+    }
+}
+
+function createFixtureCodeBlock() {
+    var fixture = document.getElementById('qunit-fixture');
+
+    preBlock = document.createElement('pre');
+    fixture.appendChild(preBlock);
+
+    codeBlock = document.createElement('code');
+    preBlock.appendChild(this.codeBlock);
+
+    return codeBlock;
+}
+
 module("createCompileArea", {
     setup: function() {
-        var fixture = document.getElementById('qunit-fixture');
-        this.codeBlock = document.createElement('code');
-        fixture.appendChild(this.codeBlock);
+        this.codeBlock = createFixtureCodeBlock();
     }
 });
 
@@ -177,10 +203,10 @@ module("createCompileArea", {
 test("c++-code", function() {
     this.codeBlock.textContent = ''; // No dependent on content
     this.codeBlock.setAttribute('data-lang', 'c++');
+
     coliru.createCompileArea(this.codeBlock);
 
-    var appendedBlock = findAppendedBlock(this.codeBlock);
-    checkIsCompileArea(appendedBlock);
+    var appendedBlock = checkBlockAdded(this.codeBlock);
     checkCompileAreaContainsRunButton(appendedBlock);
 });
 
@@ -190,16 +216,13 @@ test("non-c++-tagged-code", function() {
     this.codeBlock.textContent = 'int main() { return 0; }';
     coliru.createCompileArea(this.codeBlock);
 
-    var appendedBlock = findAppendedBlock(this.codeBlock);
-    checkIsCompileArea(appendedBlock);
+    var appendedBlock = checkBlockAdded(this.codeBlock);
     checkCompileAreaContainsRunButton(appendedBlock);
 });
 
 module("updateCodeBlock", {
     setup: function() {
-        var fixture = document.getElementById('qunit-fixture');
-        this.codeBlock = document.createElement('code');
-        fixture.appendChild(this.codeBlock);
+        this.codeBlock = createFixtureCodeBlock();
     }
 });
 
@@ -208,8 +231,7 @@ test("c++-code", function() {
     this.codeBlock.setAttribute('data-lang', 'c++');
     coliru.updateCodeBlock(this.codeBlock);
 
-    var appendedBlock = findAppendedBlock(this.codeBlock);
-    checkIsCompileArea(appendedBlock);
+    var appendedBlock = checkBlockAdded(this.codeBlock);
     checkCompileAreaContainsRunButton(appendedBlock);
 });
 
@@ -217,14 +239,42 @@ test("non-c++-tagged-code", function() {
     // despite appearances, not tagged as c++, so no button for you
     this.codeBlock.textContent = 'int main() { return 0; }';
     coliru.updateCodeBlock(this.codeBlock);
-    ok(findAppendedBlock(this.codeBlock) == null);
+
+    checkBlockNotAdded(this.codeBlock);
+});
+
+module("updateCodeBlock (non-pre code block)", {
+    setup: function() {
+        var fixture = document.getElementById('qunit-fixture');
+
+        this.codeBlock = document.createElement('code');
+        fixture.appendChild(this.codeBlock);
+    }
+});
+
+test("c++-code", function() {
+    // Even though it's tagged as a c++ code block, it's not in a
+    // <pre> block so not sensible to add run button
+
+    this.codeBlock.textContent = ''; // No dependent on content
+    this.codeBlock.setAttribute('data-lang', 'c++');
+
+    coliru.updateCodeBlock(this.codeBlock);
+
+    checkBlockNotAdded(this.codeBlock);
+});
+
+test("non-c++-tagged-code", function() {
+    // Not in a pre block and not tagged as c++, so no button for you
+    this.codeBlock.textContent = 'int main() { return 0; }';
+    coliru.updateCodeBlock(this.codeBlock);
+
+    checkBlockNotAdded(this.codeBlock);
 });
 
 module("addRunButtonsToCodeBlocks", {
     setup: function() {
-        var fixture = document.getElementById('qunit-fixture');
-        this.codeBlock = document.createElement('code');
-        fixture.appendChild(this.codeBlock);
+        this.codeBlock = createFixtureCodeBlock();
     }
 });
 
@@ -236,8 +286,7 @@ test("c++-code", function() {
     // in the page - not great
     coliru.addRunButtonsToCodeBlocks();
 
-    var appendedBlock = findAppendedBlock(this.codeBlock);
-    checkIsCompileArea(appendedBlock);
+    var appendedBlock = checkBlockAdded(this.codeBlock);
     checkCompileAreaContainsRunButton(appendedBlock);
 });
 
@@ -249,5 +298,5 @@ test("non-c++-tagged-code", function() {
     // in the page - not great
     coliru.addRunButtonsToCodeBlocks();
 
-    ok(findAppendedBlock(this.codeBlock) == null);
+    checkBlockNotAdded(this.codeBlock);
 });

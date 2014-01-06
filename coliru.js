@@ -39,22 +39,36 @@ var coliru = (function() {
         coliru.compile(coliru.makeSourceRunnable(sourceCode),
                        function(response, state) {
 
-                           var displayText = '';
-                           if (state == 'connecting') {
-                               displayText = 'Connecting...\n';
-                           }
-                           else if (state == 'running') {
-                               displayText = 'Running...\n';
+                           if (state == 'running') {
+                               compileArea.textContent = 'Running...\n';
                            }
                            else if (state == 'error') {
-                               displayText = 'Error:\n';
+                               compileArea.textContent = 'Error: ' + reponse;
+                           }
+                           else {
+                               compileArea.textContent = '';
+
+                               var outputArea = document.createElement('pre');
+                               compileArea.appendChild(outputArea);
+
+                               outputArea.className += ' coliru-output';
+                               // Pygments output formatting
+                               outputArea.className += ' go';
+
+                               outputArea.textContent = response;
+
+                               var credit = document.createElement('div');
+                               compileArea.appendChild(credit);
+                               credit.className += ' coliru-credit';
+                               credit.innerHTML += [
+                                   'Powered by <a ',
+                                   'href="http://coliru.stacked-crooked.com/">',
+                                   'Coliru</a>.'
+                                   ].join('');
                            }
 
-                           displayText += response
-
-                           compileArea.textContent = displayText;
-                           // Formatting for coliru before it has run the code
-                           compileArea.setAttribute('data-coliru-state', 'finished');
+                           // Allow style to change formatting to reflect state
+                           compileArea.setAttribute('data-coliru-state', state);
                        });
     }
 
@@ -114,11 +128,10 @@ var coliru = (function() {
             return sourceCode.match(/int\s+main\([^\)]*\)\s*[\{;]/);
         },
 
+        // Expects codeBlock to be preceded by a <pre>
         createCompileArea: function(codeBlock) {
             var compileArea = document.createElement('div');
 
-            // Pygments output formatting
-            compileArea.className += ' go';
             // Allow coliru-specific formatting
             compileArea.className += ' coliru';
             // Formatting for coliru before it has run the code
@@ -132,12 +145,16 @@ var coliru = (function() {
                                     }
                                 }(codeBlock, compileArea));
 
-            codeBlock.parentNode.insertBefore(compileArea, codeBlock.nextSibling);
+            var preCode = codeBlock.parentNode;
+            preCode.parentNode.insertBefore(compileArea, preCode.nextSibling);
         },
 
+        // Onlu update code block inside a <pre> tag and with
+        // data-lang=c++ attribute
         updateCodeBlock: function(codeBlock) {
 
-            if (codeBlock.getAttribute('data-lang') == 'c++') {
+            if (codeBlock.getAttribute('data-lang') == 'c++' &&
+                codeBlock.parentNode.tagName == 'PRE') {
                 coliru.createCompileArea(codeBlock);
             }
         },
