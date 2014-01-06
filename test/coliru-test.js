@@ -122,7 +122,24 @@ test("make runnable", function() {
 
 });
 
-module("addRunButton", {
+// Returns where the block we append to the code block is expected to appear.
+// Using a function so it's easy to change the behaviour;
+function findAppendedBlock(codeBlock) {
+    return codeBlock.nextSibling;
+}
+
+function checkIsCompileArea(element) {
+
+    equal(element.tagName, 'DIV');
+}
+
+function checkCompileAreaContainsRunButton(compileArea) {
+    equal(compileArea.children.length, 1);
+    equal(compileArea.firstChild.tagName, 'INPUT');
+    equal(compileArea.firstChild.type, 'button');
+}
+
+module("createCompileArea", {
     setup: function() {
         var fixture = document.getElementById('qunit-fixture');
         this.codeBlock = document.createElement('code');
@@ -135,18 +152,22 @@ module("addRunButton", {
 test("c++-code", function() {
     this.codeBlock.textContent = ''; // No dependent on content
     this.codeBlock.setAttribute('data-lang', 'c++');
-    coliru.addRunButton(this.codeBlock);
-    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
-    equal(this.codeBlock.previousSibling.type, 'button');
+    coliru.createCompileArea(this.codeBlock);
+
+    var appendedBlock = findAppendedBlock(this.codeBlock);
+    checkIsCompileArea(appendedBlock);
+    checkCompileAreaContainsRunButton(appendedBlock);
 });
 
 
 test("non-c++-tagged-code", function() {
     // despite appearances, not tagged as c++
     this.codeBlock.textContent = 'int main() { return 0; }';
-    coliru.addRunButton(this.codeBlock);
-    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
-    equal(this.codeBlock.previousSibling.type, 'button');
+    coliru.createCompileArea(this.codeBlock);
+
+    var appendedBlock = findAppendedBlock(this.codeBlock);
+    checkIsCompileArea(appendedBlock);
+    checkCompileAreaContainsRunButton(appendedBlock);
 });
 
 module("updateCodeBlock", {
@@ -161,15 +182,17 @@ test("c++-code", function() {
     this.codeBlock.textContent = ''; // No dependent on content
     this.codeBlock.setAttribute('data-lang', 'c++');
     coliru.updateCodeBlock(this.codeBlock);
-    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
-    equal(this.codeBlock.previousSibling.type, 'button');
+
+    var appendedBlock = findAppendedBlock(this.codeBlock);
+    checkIsCompileArea(appendedBlock);
+    checkCompileAreaContainsRunButton(appendedBlock);
 });
 
 test("non-c++-tagged-code", function() {
     // despite appearances, not tagged as c++, so no button for you
     this.codeBlock.textContent = 'int main() { return 0; }';
     coliru.updateCodeBlock(this.codeBlock);
-    ok(this.codeBlock.previousSibling == null);
+    ok(findAppendedBlock(this.codeBlock) == null);
 });
 
 module("addRunButtonsToCodeBlocks", {
@@ -188,8 +211,9 @@ test("c++-code", function() {
     // in the page - not great
     coliru.addRunButtonsToCodeBlocks();
 
-    equal(this.codeBlock.previousSibling.tagName, 'INPUT');
-    equal(this.codeBlock.previousSibling.type, 'button');
+    var appendedBlock = findAppendedBlock(this.codeBlock);
+    checkIsCompileArea(appendedBlock);
+    checkCompileAreaContainsRunButton(appendedBlock);
 });
 
 test("non-c++-tagged-code", function() {
@@ -200,5 +224,5 @@ test("non-c++-tagged-code", function() {
     // in the page - not great
     coliru.addRunButtonsToCodeBlocks();
 
-    ok(this.codeBlock.previousSibling == null);
+    ok(findAppendedBlock(this.codeBlock) == null);
 });

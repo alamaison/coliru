@@ -28,23 +28,21 @@
 
 var coliru = (function() {
 
-    function displayColiruOutput(codeBlock) {
+    function displayColiruOutput(codeBlock, compileArea) {
 
-        var separator = document.createElement('hr');
-        codeBlock.parentNode.insertBefore(separator, codeBlock.nextSibling);
-
-        var outputArea = document.createElement('div');
-        codeBlock.parentNode.insertBefore(outputArea, separator.nextSibling);
+        // Remove button so the compile-display process can
+        // only happen once
+        compileArea.removeChild(compileArea.firstChild);
 
         var sourceCode = codeBlock.textContent;
 
         coliru.compile(coliru.makeSourceRunnable(sourceCode),
                        function(response) {
-                           outputArea.textContent = response;
+                           compileArea.textContent = response;
                        });
     }
 
-    function createCompileButton(codeBlock, compileAction) {
+    function createCompileButton(compileArea, compileAction) {
 
         var compileButton = document.createElement('input');
         compileButton.type = 'button';
@@ -52,7 +50,7 @@ var coliru = (function() {
         compileButton.style = 'float : right';
         compileButton.onclick = compileAction;
 
-        codeBlock.parentNode.insertBefore(compileButton, codeBlock);
+        compileArea.appendChild(compileButton);
     }
 
     return {
@@ -92,20 +90,23 @@ var coliru = (function() {
             return sourceCode.match(/int\s+main\([^\)]*\)\s*[\{;]/);
         },
 
-        addRunButton: function(codeBlock) {
-
-            createCompileButton(codeBlock,
-                                function(codeBlock) {
+        createCompileArea: function(codeBlock) {
+            var compileArea = document.createElement('div');
+            compileArea.class = 'go';
+            createCompileButton(compileArea,
+                                function(codeBlock, compileArea) {
                                     return function() {
-                                        displayColiruOutput(codeBlock);
+                                        displayColiruOutput(codeBlock, compileArea);
                                     }
-                                }(codeBlock));
+                                }(codeBlock, compileArea));
+
+            codeBlock.parentNode.insertBefore(compileArea, codeBlock.nextSibling);
         },
 
         updateCodeBlock: function(codeBlock) {
 
             if (codeBlock.getAttribute('data-lang') == 'c++') {
-                coliru.addRunButton(codeBlock);
+                coliru.createCompileArea(codeBlock);
             }
         },
 
