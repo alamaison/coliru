@@ -160,8 +160,8 @@ function checkIsCompileArea(element) {
 
 function checkCompileAreaContainsRunButton(compileArea) {
     equal(compileArea.children.length, 1);
-    equal(compileArea.firstChild.tagName, 'INPUT');
-    equal(compileArea.firstChild.type, 'button');
+    equal(compileArea.firstChild.tagName, 'SPAN');
+    ok(compileArea.firstChild.className.match(/runbutton/));
 }
 
 module("createCompileArea", {

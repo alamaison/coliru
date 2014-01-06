@@ -60,10 +60,11 @@ var coliru = (function() {
 
     function createCompileButton(compileArea, compileAction) {
 
-        var compileButton = document.createElement('input');
-        compileButton.type = 'button';
-        compileButton.value = 'Run this code';
+        var compileButton = document.createElement('span');
+        compileButton.textContent = 'Run this code';
+        compileButton.className += ' runbutton';
         compileButton.onclick = compileAction;
+        compileButton.onkeydown = compileAction;
 
         compileArea.appendChild(compileButton);
     }
