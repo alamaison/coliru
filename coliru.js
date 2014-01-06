@@ -39,6 +39,8 @@ var coliru = (function() {
         coliru.compile(coliru.makeSourceRunnable(sourceCode),
                        function(response) {
                            compileArea.textContent = response;
+                           // Formatting for coliru before it has run the code
+                           compileArea.setAttribute('data-coliru-state', 'finished');
                        });
     }
 
@@ -47,7 +49,6 @@ var coliru = (function() {
         var compileButton = document.createElement('input');
         compileButton.type = 'button';
         compileButton.value = 'Run this code';
-        compileButton.style = 'float : right';
         compileButton.onclick = compileAction;
 
         compileArea.appendChild(compileButton);
@@ -92,7 +93,14 @@ var coliru = (function() {
 
         createCompileArea: function(codeBlock) {
             var compileArea = document.createElement('div');
-            compileArea.class = 'go';
+
+            // Pygments output formatting
+            compileArea.className += ' go';
+            // Allow coliru-specific formatting
+            compileArea.className += ' coliru';
+            // Formatting for coliru before it has run the code
+            compileArea.setAttribute('data-coliru-state', 'not-run');
+
             createCompileButton(compileArea,
                                 function(codeBlock, compileArea) {
                                     return function() {
