@@ -63,7 +63,7 @@ var coliru = (function() {
                                credit.innerHTML += [
                                    'Powered by <a ',
                                    'href="http://coliru.stacked-crooked.com/">',
-                                   'Coliru</a>.'
+                                   'Coliru</a>'
                                    ].join('');
                            }
 
@@ -115,12 +115,22 @@ var coliru = (function() {
                 JSON.stringify({ "cmd": compileCommand, "src": sourceCode }));
         },
 
+        magicIncludes: '',
+
         makeSourceRunnable: function(sourceCode) {
             if (coliru.containsMainMethod(sourceCode)) {
                 return sourceCode;
             }
             else {
-                return 'int main() {\n' + sourceCode + '\nreturn 0;\n}';
+                var runnableSourceCode = '';
+                for (var i=0; i < coliru.magicIncludes.length; ++i) {
+                    runnableSourceCode += '#include <'
+                        + coliru.magicIncludes[i] + '>\n';
+                }
+                // No return needed (see C++ spec)
+                runnableSourceCode += 'int main() {\n' + sourceCode + '\n}';
+
+                return runnableSourceCode;
             }
         },
 

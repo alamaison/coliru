@@ -147,6 +147,45 @@ test("make runnable", function() {
 
 });
 
+asyncTest("no explicit main", function() {
+    expect(3);
+
+    var source = coliru.makeSourceRunnable('int i = 0; i++;');
+
+    coliru.compile(source,
+                   responseCallback(function(response) {
+                       equal(response, '');
+                   }));
+});
+
+// no-main code magically includes common std headers
+asyncTest("compile no explicit main with output", function() {
+    expect(3);
+
+    coliru.magicIncludes = ['iostream'];
+    var source = coliru.makeSourceRunnable(
+        'std::cout << "this magically works";');
+
+    coliru.compile(source,
+                   responseCallback(function(response) {
+                       equal(response, 'this magically works');
+                   }));
+});
+
+// no-main code magically includes common std headers
+asyncTest("compile no explicit main with auto_ptr", function() {
+    expect(3);
+
+    coliru.magicIncludes = ['memory'];
+
+    var source = coliru.makeSourceRunnable(
+        'std::auto_ptr<int> bob; bob.reset();');
+    coliru.compile(source,
+                   responseCallback(function(response) {
+                       equal(response, '');
+                   }));
+});
+
 function checkCompileAreaContainsRunButton(compileArea) {
     equal(compileArea.children.length, 1);
     equal(compileArea.firstChild.tagName, 'SPAN');
