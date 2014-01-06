@@ -62,52 +62,77 @@ test("arg main multiline", function() {
 
 module("compile");
 
+// 2 expected assertions when using this callback + however many are in given
+// test
+function responseCallback(expectedFinalResponseTest) {
+
+    var hasRun = false;
+
+    return function(response, state) {
+
+        if (state == 'running') {
+            // We don't know how many times 'running' is sent so
+            // do assertion just once
+            if (!hasRun) {
+                equal(response, '');
+            }
+            hasRun = true;
+        }
+        else {
+            equal(state, 'finished');
+            expectedFinalResponseTest(response);
+            start();
+        }
+    };
+}
+
 asyncTest("no output return success", function() {
-    expect(1);
+    expect(3);
 
     coliru.compile('int main() { return 0; }',
-                   function(response) { equal(response, ''); start(); });
+                   responseCallback(function(response) { equal(response, ''); }));
 });
 
 asyncTest("no output return failure", function() {
-    expect(1);
+    expect(3);
 
     coliru.compile('int main() { return 1; }',
-                   function(response) { equal(response, ''); start(); });
+                   responseCallback(function(response) { equal(response, ''); }));
 });
 
 asyncTest("run with output", function() {
-    expect(1);
+    expect(3);
 
-    coliru.compile([
-        '#include <iostream>',
-        'int main() {',
-        '    std::cout << "test string";',
-        '    return 0;',
-        '}'
-    ].join('\n'),
-    function(response) { equal(response, 'test string'); start(); });
+    coliru.compile(
+        [
+            '#include <iostream>',
+            'int main() {',
+            '    std::cout << "test string";',
+            '    return 0;',
+            '}'
+        ].join('\n'),
+        responseCallback(function(response) {
+            equal(response, 'test string');
+        }));
 
 });
 
 asyncTest("compile error", function() {
-    expect(1);
+    expect(3);
 
     coliru.compile('int main() { burp; }',
-                   function(response) {
-                       ok(response.match(/error\:/)); start();
-                   });
-
+                   responseCallback(function(response) {
+                       ok(response.match(/error\:/));
+                   }));
 });
 
 asyncTest("run crash", function() {
-    expect(1);
+    expect(3);
 
     coliru.compile('int main() { throw 0; }',
-                   function(response) {
-                       ok(response.match(/terminate/)); start();
-                   });
-
+                   responseCallback(function(response) {
+                       ok(response.match(/terminate/));
+                   }));
 });
 
 module("makeSourceRunnable");

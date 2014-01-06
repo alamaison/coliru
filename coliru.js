@@ -37,8 +37,22 @@ var coliru = (function() {
         var sourceCode = codeBlock.textContent;
 
         coliru.compile(coliru.makeSourceRunnable(sourceCode),
-                       function(response) {
-                           compileArea.textContent = response;
+                       function(response, state) {
+
+                           var displayText = '';
+                           if (state == 'connecting') {
+                               displayText = 'Connecting...\n';
+                           }
+                           else if (state == 'running') {
+                               displayText = 'Running...\n';
+                           }
+                           else if (state == 'error') {
+                               displayText = 'Error:\n';
+                           }
+
+                           displayText += response
+
+                           compileArea.textContent = displayText;
                            // Formatting for coliru before it has run the code
                            compileArea.setAttribute('data-coliru-state', 'finished');
                        });
@@ -63,16 +77,24 @@ var coliru = (function() {
                 '&& ./a.out'].join('');
 
             var coliruConnection = new XMLHttpRequest();
+
+            coliruConnection.onreadystatechange = function() {
+                if (coliruConnection.readyState == 4) {
+                    if (coliruConnection.status != 200) {
+                        compileReadyResponse(coliruConnection.response, 'error');
+                    }
+                    else {
+                        compileReadyResponse(coliruConnection.response, 'finished');
+                    }
+                }
+                else {
+                    compileReadyResponse(coliruConnection.response, 'running');
+                }
+            }
+
             coliruConnection.open("POST",
                                   "http://coliru.stacked-crooked.com/compile",
                                   true);
-
-            coliruConnection.onreadystatechange = function() {
-                if (coliruConnection.readyState == 4 &&
-                    coliruConnection.status == 200) {
-                    compileReadyResponse(coliruConnection.response);
-                }
-            }
 
             coliruConnection.send(
                 JSON.stringify({ "cmd": compileCommand, "src": sourceCode }));
@@ -104,7 +126,8 @@ var coliru = (function() {
             createCompileButton(compileArea,
                                 function(codeBlock, compileArea) {
                                     return function() {
-                                        displayColiruOutput(codeBlock, compileArea);
+                                        displayColiruOutput(codeBlock,
+                                                            compileArea);
                                     }
                                 }(codeBlock, compileArea));
 
