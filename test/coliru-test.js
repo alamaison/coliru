@@ -64,7 +64,7 @@ module("compile");
 
 // 2 expected assertions when using this callback + however many are in given
 // test
-function responseCallback(expectedFinalResponseTest) {
+function responseCallback(expectedFinalStateTest) {
 
     var hasRun = false;
 
@@ -79,8 +79,7 @@ function responseCallback(expectedFinalResponseTest) {
             hasRun = true;
         }
         else {
-            equal(state, 'finished');
-            expectedFinalResponseTest(response);
+            expectedFinalStateTest(state, response);
             start();
         }
     };
@@ -90,14 +89,20 @@ asyncTest("no output return success", function() {
     expect(3);
 
     coliru.compile('int main() { return 0; }',
-                   responseCallback(function(response) { equal(response, ''); }));
+                   responseCallback(function(state, response) {
+                       strictEqual(state, 0);
+                       equal(response, '');
+                   }));
 });
 
 asyncTest("no output return failure", function() {
     expect(3);
 
     coliru.compile('int main() { return 1; }',
-                   responseCallback(function(response) { equal(response, ''); }));
+                   responseCallback(function(state, response) {
+                       strictEqual(state, 1);
+                       equal(response, '');
+                   }));
 });
 
 asyncTest("run with output", function() {
@@ -111,7 +116,8 @@ asyncTest("run with output", function() {
             '    return 0;',
             '}'
         ].join('\n'),
-        responseCallback(function(response) {
+        responseCallback(function(state, response) {
+            strictEqual(state, 0);
             equal(response, 'test string');
         }));
 
@@ -121,7 +127,8 @@ asyncTest("compile error", function() {
     expect(3);
 
     coliru.compile('int main() { burp; }',
-                   responseCallback(function(response) {
+                   responseCallback(function(state, response) {
+                       notStrictEqual(state, 0);
                        ok(response.match(/error\:/));
                    }));
 });
@@ -130,7 +137,8 @@ asyncTest("run crash", function() {
     expect(3);
 
     coliru.compile('int main() { throw 0; }',
-                   responseCallback(function(response) {
+                   responseCallback(function(state, response) {
+                       notStrictEqual(state, 0);
                        ok(response.match(/terminate/));
                    }));
 });
@@ -153,7 +161,8 @@ asyncTest("no explicit main", function() {
     var source = coliru.makeSourceRunnable('int i = 0; i++;');
 
     coliru.compile(source,
-                   responseCallback(function(response) {
+                   responseCallback(function(state, response) {
+                       strictEqual(state, 0);
                        equal(response, '');
                    }));
 });
@@ -167,7 +176,8 @@ asyncTest("compile no explicit main with output", function() {
         'std::cout << "this magically works";');
 
     coliru.compile(source,
-                   responseCallback(function(response) {
+                   responseCallback(function(state, response) {
+                       strictEqual(state, 0);
                        equal(response, 'this magically works');
                    }));
 });
@@ -181,7 +191,8 @@ asyncTest("compile no explicit main with auto_ptr", function() {
     var source = coliru.makeSourceRunnable(
         'std::auto_ptr<int> bob; bob.reset();');
     coliru.compile(source,
-                   responseCallback(function(response) {
+                   responseCallback(function(state, response) {
+                       strictEqual(state, 0);
                        equal(response, '');
                    }));
 });

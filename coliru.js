@@ -48,14 +48,27 @@ var coliru = (function() {
                            else {
                                compileArea.textContent = '';
 
-                               var outputArea = document.createElement('pre');
-                               compileArea.appendChild(outputArea);
+                               if (response != '') {
+                                   var outputArea = document.createElement('pre');
+                                   compileArea.appendChild(outputArea);
 
-                               outputArea.className += ' coliru-output';
-                               // Pygments output formatting
-                               outputArea.className += ' go';
+                                   outputArea.className += ' coliru-output';
+                                   // Pygments output formatting
+                                   outputArea.className += ' go';
 
-                               outputArea.textContent = response;
+                                   outputArea.textContent = response;
+                               }
+
+                               var status = document.createElement('div');
+                               compileArea.appendChild(status);
+                               status.className += ' coliru-status';
+                               if (state == 0) {
+                                   status.textContent = 'Success';
+                               }
+                               else {
+                                   status.textContent =
+                                       'Failed (return code ' + state + ')';
+                               }
 
                                var credit = document.createElement('div');
                                compileArea.appendChild(credit);
@@ -89,7 +102,7 @@ var coliru = (function() {
 
             var compileCommand = [
                 'g++-4.8 -std=c++11 -O2 -Wall -pedantic -pthread main.cpp ',
-                '&& ./a.out'].join('');
+                '&& ./a.out; echo COLIRUSTATUS $?'].join('');
 
             var coliruConnection = new XMLHttpRequest();
 
@@ -99,7 +112,18 @@ var coliru = (function() {
                         compileReadyResponse(coliruConnection.response, 'error');
                     }
                     else {
-                        compileReadyResponse(coliruConnection.response, 'finished');
+                        // The command above wil *always* output the last return code
+                        // at the end of the command.  We extract it and use it as
+                        // the status
+                        var rawResponse = coliruConnection.response;
+                        console.log(rawResponse);
+                        var pattern = /^([\s\S]*)COLIRUSTATUS (\d+)\n$/m;
+                        var splitResponse = rawResponse.match(pattern);
+                        console.log(splitResponse[1]);
+                        console.log(parseInt(splitResponse[2]));
+
+                        compileReadyResponse(splitResponse[1],
+                                             parseInt(splitResponse[2]));
                     }
                 }
                 else {
