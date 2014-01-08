@@ -116,11 +116,8 @@ var coliru = (function() {
                         // at the end of the command.  We extract it and use it as
                         // the status
                         var rawResponse = coliruConnection.response;
-                        console.log(rawResponse);
                         var pattern = /^([\s\S]*)COLIRUSTATUS (\d+)\n$/m;
                         var splitResponse = rawResponse.match(pattern);
-                        console.log(splitResponse[1]);
-                        console.log(parseInt(splitResponse[2]));
 
                         compileReadyResponse(splitResponse[1],
                                              parseInt(splitResponse[2]));
