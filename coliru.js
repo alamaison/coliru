@@ -100,8 +100,16 @@ var coliru = (function() {
 
         compile: function(sourceCode, compileReadyResponse) {
 
+            var linkOptions = '';
+            for (var i=0; i < coliru.linkLibraries.length; ++i) {
+                linkOptions += '-l' + coliru.linkLibraries[i] + ' ';
+            }
+
             var compileCommand = [
-                'g++-4.8 -std=c++11 -O2 -Wall -pedantic -pthread main.cpp ',
+                'g++-4.8 -std=c++11 ',
+                '-O2 -Wall -pedantic -pthread ',
+                'main.cpp ',
+                linkOptions,
                 '&& ./a.out; echo COLIRUSTATUS $?'].join('');
 
             var coliruConnection = new XMLHttpRequest();
@@ -136,7 +144,9 @@ var coliru = (function() {
                 JSON.stringify({ "cmd": compileCommand, "src": sourceCode }));
         },
 
-        magicIncludes: '',
+        linkLibraries: [],
+
+        magicIncludes: [],
 
         makeSourceRunnable: function(sourceCode) {
             if (coliru.containsMainMethod(sourceCode)) {

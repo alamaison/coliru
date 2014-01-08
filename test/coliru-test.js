@@ -143,6 +143,28 @@ asyncTest("run crash", function() {
                    }));
 });
 
+// no-main code magically includes common std headers
+asyncTest("compile with extra link libraries", function() {
+    expect(3);
+
+    // If either library is missing this will fail to link
+    coliru.linkLibraries = ['boost_system', 'boost_filesystem'];
+    var source =
+        [
+            '#include <iostream>',
+            '#include <boost/filesystem.hpp>',
+            'int main() {',
+            '    std::cout << boost::filesystem::temp_directory_path();',
+            '}'
+        ].join('\n');
+
+    coliru.compile(source,
+                   responseCallback(function(state, response) {
+                       strictEqual(state, 0);
+                       ok(response, /\/.+/);
+                   }));
+});
+
 module("makeSourceRunnable");
 
 test("make runnable", function() {
