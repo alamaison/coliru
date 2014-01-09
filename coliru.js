@@ -106,7 +106,9 @@ var coliru = (function() {
             }
 
             var compileCommand = [
-                'g++-4.8 -std=c++11 ',
+                //'g++-4.8 -std=c++11 ',
+                'clang++ -std=c++11 ',
+                //'clang++ -std=c++11 -stdlib=libc++ -lsupc++ ',
                 '-O2 -Wall -pedantic -pthread ',
                 'main.cpp ',
                 linkOptions,
